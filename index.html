@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Connections Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <style>
+    </style>
+
+</head>
+
+<body>
+    <h1>Connections Game</h1>
+
+    <div id="game-section">
+        <h2>Game</h2>
+        <p>Choose 4 words from the table:</p>
+        <table id="word-table"></table>
+        <button id="submit-guess">Submit Guess</button>
+        <button id="shuffle-words">Shuffle Words</button>
+        <button id="new-game">New Game</button>
+        <div id="error-message"></div>
+        <h3>Prior Guesses:</h3>
+        <ul id="guess-list"></ul>
+    </div>
+
+    <div id="stats-section">
+        <h2>User Game Statistics</h2>
+        <p>Games Played: <span id="games-played">0</span></p>
+        <p>Games Won: <span id="games-won">0</span></p>
+        <p>Current Win Streak: <span id="win-streak">0</span></p>
+        <p>Average Guesses per Game: <span id="avg-guesses">0</span></p>
+    </div>
+
+    <div id="clear-section">
+        <h2>Clear History</h2>
+        <button id="clear-history">Clear History</button>
+    </div>
+
+    <script src="connections.js"></script>
+    <script>
+        // Game variables
+        let categories = [];
+        let selectedWords = [];
+        let guesses = [];
+        let gamesPlayed = 0;
+        let gamesWon = 0;
+        let winStreak = 0;
+        let totalGuesses = 0;
+
+        // DOM elements
+        const wordTable = document.getElementById('word-table');
+        const submitGuessBtn = document.getElementById('submit-guess');
+        const shuffleWordsBtn = document.getElementById('shuffle-words');
+        const newGameBtn = document.getElementById('new-game');
+        const errorMessage = document.getElementById('error-message');
+        const guessList = document.getElementById('guess-list');
+        const gamesPlayedSpan = document.getElementById('games-played');
+        const gamesWonSpan = document.getElementById('games-won');
+        const winStreakSpan = document.getElementById('win-streak');
+        const avgGuessesSpan = document.getElementById('avg-guesses');
+        const clearHistoryBtn = document.getElementById('clear-history');
+
+        // Event listeners
+        wordTable.addEventListener('click', handleWordClick);
+        submitGuessBtn.addEventListener('click', handleGuessSubmit);
+        shuffleWordsBtn.addEventListener('click', shuffleWords);
+        newGameBtn.addEventListener('click', startNewGame);
+        clearHistoryBtn.addEventListener('click', clearHistory);
+        window.addEventListener('load', loadGame);
+        window.addEventListener('beforeunload', saveGame);
+
+        // Initialize game
+        function initializeGame(categoryData) {
+            categories = categoryData.categories.map(cat => cat.words);
+            selectedWords = [];
+            guesses = [];
+            renderWordTable();
+        }
+
+        // Render word table
+        function renderWordTable() {
+            let tableHTML = '';
+            for (let i = 0; i < 4; i++) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < 4; j++) {
+                    const wordIndex = i * 4 + j;
+                    const word = categories.flat()[wordIndex];
+                    tableHTML += `<td data-word="${word}">${word}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            wordTable.innerHTML = tableHTML;
+        }
+
+        // Handle word click
+        function handleWordClick(event) {
+            const cell = event.target;
+            if (cell.tagName === 'TD') {
+                const word = cell.dataset.word;
+                if (selectedWords.includes(word)) {
+                    selectedWords = selectedWords.filter(w => w !== word);
+                    cell.classList.remove('selected');
+                } else if (selectedWords.length < 4) {
+                    selectedWords.push(word);
+                    cell.classList.add('selected');
+                }
+            }
+        }
+
+        // Handle guess submit
+        function handleGuessSubmit() {
+            if (selectedWords.length !== 4) {
+                errorMessage.textContent = 'Please select exactly 4 words.';
+                return;
+            }
+            errorMessage.textContent = '';
+
+            const categoryCount = {};
+            selectedWords.forEach(word => {
+                const category = categories.find(cat => cat.includes(word));
+                if (category) {
+                    categoryCount[category] = (categoryCount[category] || 0) + 1;
+                }
+            });
+
+            const maxCount = Math.max(...Object.values(categoryCount));
+            const correctCategory = Object.keys(categoryCount).find(
+                cat => categoryCount[cat] === maxCount
+            );
+
+            if (maxCount === 4) {
+                // Correct guess
+                categories = categories.filter(cat => !cat.includes(correctCategory));
+                if (categories.length === 0) {
+                    // Game won
+                    gamesWon++;
+                    winStreak++;
+                    totalGuesses += guesses.length + 1;
+                    updateStats();
+                    alert('Congratulations! You won the game!');
+                    startNewGame();
+                } else {
+                    // Add guess to list
+                    guesses.push({
+                        words: selectedWords,
+                        correctCount: maxCount,
+                        incorrectCount: 0
+                    });
+                    // Remove guessed words from table
+                    selectedWords.forEach(word => {
+                        const cell = wordTable.querySelector(`[data-word="${word}"]`);
+                        cell.parentNode.removeChild(cell);
+                    });
+                    selectedWords = [];
+                }
+            } else {
+                // Incorrect guess
+                const incorrectCount = 4 - maxCount;
+                guesses.push({
+                    words: selectedWords,
+                    correctCount: maxCount,
+                    incorrectCount: incorrectCount
+                });
+                selectedWords = [];
+                wordTable.querySelectorAll('.selected').forEach(cell => {
+                    cell.classList.remove('selected');
+                });
+            }
+
+            renderGuessList();
+        }
+
+        // Render guess list
+        function renderGuessList() {
+            let listHTML = '';
+            guesses.forEach(guess => {
+                listHTML += `<li>${guess.words.join(', ')} - ${guess.correctCount} correct, ${guess.incorrectCount} incorrect</li>`;
+            });
+            guessList.innerHTML = listHTML;
+        }
+
+        // Shuffle words
+        function shuffleWords() {
+            const words = categories.flat();
+            for (let i = words.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [words[i], words[j]] = [words[j], words[i]];
+            }
+            categories = [];
+            for (let i = 0; i < words.length; i += 4) {
+                categories.push(words.slice(i, i + 4));
+            }
+            renderWordTable();
+        }
+
+        // Start new game
+        function startNewGame() {
+            if (guesses.length > 0) {
+                gamesPlayed++;
+                winStreak = 0;
+                updateStats();
+            }
+            getRandomCategories(initializeGame);
+            guesses = [];
+            renderGuessList();
+        }
+
+        // Update game statistics
+        function updateStats() {
+            gamesPlayedSpan.textContent = gamesPlayed;
+            gamesWonSpan.textContent = gamesWon;
+            winStreakSpan.textContent = winStreak;
+            avgGuessesSpan.textContent = (totalGuesses / gamesPlayed).toFixed(2);
+        }
+
+        // Clear game history
+        function clearHistory() {
+            gamesPlayed = 0;
+            gamesWon = 0;
+            winStreak = 0;
+            totalGuesses = 0;
+            updateStats();
+            startNewGame();
+            localStorage.removeItem('connectionsGame');
+        }
+
+        // Load game from local storage
+        function loadGame() {
+            const savedGame = localStorage.getItem('connectionsGame');
+            if (savedGame) {
+                const gameData = JSON.parse(savedGame);
+                categories = gameData.categories;
+                selectedWords = gameData.selectedWords;
+                guesses = gameData.guesses;
+                gamesPlayed = gameData.gamesPlayed;
+                gamesWon = gameData.gamesWon;
+                winStreak = gameData.winStreak;
+                totalGuesses = gameData.totalGuesses;
+                renderWordTable();
+                renderGuessList();
+                updateStats();
+            } else {
+                startNewGame();
+            }
+        }
+
+        // Save game to local storage
+        function saveGame() {
+            const gameData = {
+                categories: categories,
+                selectedWords: selectedWords,
+                guesses: guesses,
+                gamesPlayed: gamesPlayed,
+                gamesWon: gamesWon,
+                winStreak: winStreak,
+                totalGuesses: totalGuesses
+            };
+            localStorage.setItem('connectionsGame', JSON.stringify(gameData));
+        }
+    </script>
+</body>
+
+</html>
