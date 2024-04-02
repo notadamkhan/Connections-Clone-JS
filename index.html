@@ -237,7 +237,8 @@
             gamesPlayedSpan.textContent = gamesPlayed;
             gamesWonSpan.textContent = gamesWon;
             winStreakSpan.textContent = winStreak;
-            avgGuessesSpan.textContent = (totalGuesses / gamesPlayed).toFixed(2);
+            let avgGuesses = (totalGuesses / gamesPlayed).toFixed(2);
+            avgGuessesSpan.textContent = isNaN(avgGuesses) ? '0' : avgGuesses;
         }
 
         // Clear game history
