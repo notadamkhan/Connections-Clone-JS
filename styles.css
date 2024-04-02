@@ -16,3 +16,19 @@ td {
 .selected {
     background-color: rgb(224, 181, 75);
 }
+
+.stats-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.stats-item {
+    text-align: center;
+}
+
+.stats-item h4,
+.stats-item p {
+    display: block;
+}
