@@ -9,8 +9,6 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
     <link rel="stylesheet" type="text/css" href="styles.css">
-    <style>
-    </style>
 
 </head>
 
@@ -106,17 +104,32 @@
 
         // Render word table
         function renderWordTable() {
+            const words = categories.flat();
+            const shuffledWords = shuffleArray(words);
+
             let tableHTML = '';
             for (let i = 0; i < 4; i++) {
                 tableHTML += '<tr>';
                 for (let j = 0; j < 4; j++) {
                     const wordIndex = i * 4 + j;
-                    const word = categories.flat()[wordIndex];
-                    tableHTML += `<td data-word="${word}">${word}</td>`;
+                    if (wordIndex < shuffledWords.length) {
+                        const word = shuffledWords[wordIndex];
+                        tableHTML += `<td data-word="${word}">${word}</td>`;
+                    } else {
+                        tableHTML += '<td></td>';
+                    }
                 }
                 tableHTML += '</tr>';
             }
             wordTable.innerHTML = tableHTML;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
         }
 
         // Handle word click
@@ -157,7 +170,8 @@
 
             if (maxCount === 4) {
                 // Correct guess
-                categories = categories.filter(cat => !cat.includes(correctCategory));
+                categories = categories.map(category => category.filter(word => !selectedWords.includes(word)));
+                categories = categories.filter(category => category.length > 0);
                 if (categories.length === 0) {
                     // Game won
                     gamesWon++;
@@ -208,15 +222,12 @@
 
         // Shuffle words
         function shuffleWords() {
-            const words = categories.flat();
-            for (let i = words.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [words[i], words[j]] = [words[j], words[i]];
-            }
-            categories = [];
-            for (let i = 0; i < words.length; i += 4) {
-                categories.push(words.slice(i, i + 4));
-            }
+            categories.forEach(category => {
+                for (let i = category.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [category[i], category[j]] = [category[j], category[i]];
+                }
+            });
             renderWordTable();
         }
 
@@ -224,7 +235,7 @@
         function startNewGame() {
             if (guesses.length > 0) {
                 gamesPlayed++;
-                winStreak = 0;
+                winStreak = categories.length === 0 ? winStreak : 0; // Reset win streak if the previous game was not won
                 updateStats();
             }
             getRandomCategories(initializeGame);
