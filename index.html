@@ -241,6 +241,8 @@
             guesses.forEach(guess => {
                 if (guess.incorrectCount === 0)
                     listHTML += `<li> <b> Correct! ${guess.category}: </b> ${guess.words.join(', ')}</li>`;
+                else if (guess.correctCount === 1)
+                    listHTML += `<li>${guess.words.join(', ')} - incorrect</li>`;
                 else if (guess.correctCount === 0)
                     listHTML += `<li>${guess.words.join(', ')} - ${guess.incorrectCount} incorrect</li>`;
                 else
