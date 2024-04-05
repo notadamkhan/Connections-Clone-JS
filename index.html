@@ -63,7 +63,6 @@
         </div>
     </div>
 
-
     <!-- <div id="stats-section">
         <p>Games Played: <span id="games-played">0</span></p>
         <p>Games Won: <span id="games-won">0</span></p>
@@ -113,6 +112,12 @@
         // Initialize game
         function initializeGame(categoryData) {
             categories = categoryData.categories.map(cat => cat.words);
+            wordToCategory = {};
+            categoryData.categories.forEach(cat => {
+                cat.words.forEach(word => {
+                    wordToCategory[word] = cat.category;
+                });
+            });
             selectedWords = [];
             guesses = [];
             renderWordTable();
@@ -188,6 +193,8 @@
                 // Correct guess
                 categories = categories.map(category => category.filter(word => !selectedWords.includes(word)));
                 categories = categories.filter(category => category.length > 0);
+                const categoryName = wordToCategory[selectedWords[0]];
+
                 if (categories.length === 0) {
                     // Game won
                     gamesWon++;
@@ -201,7 +208,8 @@
                     guesses.push({
                         words: selectedWords,
                         correctCount: maxCount,
-                        incorrectCount: 0
+                        incorrectCount: 0,
+                        category: categoryName
                     });
                     // Remove guessed words from table
                     selectedWords.forEach(word => {
@@ -231,7 +239,12 @@
         function renderGuessList() {
             let listHTML = '';
             guesses.forEach(guess => {
-                listHTML += `<li>${guess.words.join(', ')} - ${guess.incorrectCount} incorrect</li>`;
+                if (guess.incorrectCount === 0)
+                    listHTML += `<li> <b> Correct! ${guess.category}: </b> ${guess.words.join(', ')}</li>`;
+                else if (guess.correctCount === 0)
+                    listHTML += `<li>${guess.words.join(', ')} - ${guess.incorrectCount} incorrect</li>`;
+                else
+                    listHTML += `<li>${guess.words.join(', ')} - ${guess.correctCount} correct, ${guess.incorrectCount} incorrect</li>`;
             });
             guessList.innerHTML = listHTML;
         }
@@ -284,6 +297,12 @@
             const savedGame = localStorage.getItem('connectionsGame');
             if (savedGame) {
                 const gameData = JSON.parse(savedGame);
+                guesses = gameData.guesses.map(guess => ({
+                    words: guess.words,
+                    correctCount: guess.correctCount,
+                    incorrectCount: guess.incorrectCount,
+                    category: guess.category
+                }));
                 categories = gameData.categories;
                 selectedWords = gameData.selectedWords;
                 guesses = gameData.guesses;
