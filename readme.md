@@ -1,5 +1,8 @@
 # Connections Game
 
+<p align="center">
+  <img src="img.png" alt="Lights Out Game" width="600">
+</p>
 This is a simple implementation of the Connections Game. The game involves guessing connections between words. It's implemented only using client-side JavaScript. This game was developed for CS 4640 - Web Programming at the University of Virginia.
 
 ## Features
