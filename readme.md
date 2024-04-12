@@ -1,4 +1,4 @@
-# Connections Game
+# [Connections Game](https://cs4640.cs.virginia.edu/azk7ad/hw6/)
 
 <p align="center">
   <img src="img.png" alt="Lights Out Game" width="600">
@@ -41,7 +41,3 @@ The game keeps track of the following statistics:
 ## Local Storage
 
 The game uses local storage to save and load game data.
-
-## Future Improvements
-
--
